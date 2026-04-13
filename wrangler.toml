@@ -5,7 +5,7 @@ pages_build_output_dir = "./dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "mealsxu-db"
-database_id = "your-d1-db-id" # user will replace this or we can leave as placeholder
+database_id = "fd57662d-e3ce-4245-afad-e4fb108d3fde" # user will replace this or we can leave as placeholder
 
 [[r2_buckets]]
 binding = "R2"

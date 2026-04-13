@@ -38,14 +38,22 @@ Mealsxu is a high-performance, edge-first recipe platform built on **Cloudflare 
    npm install
    ```
 
-3. **Initialize the Database:**
+3. **Database Setup:**
+   The database `mealsxu-db` is already initialized on Cloudflare. To run locally, initialize your local D1:
    ```bash
-   npx wrangler d1 create mealsxu-db
-   # Update your wrangler.toml with the generated database_id
    npx wrangler d1 execute mealsxu-db --local --file=schema.sql
    ```
 
-4. **Run Development Server:**
+4. **Secrets and Environment Variables:**
+   Set up your secrets for local development in a `.dev.vars` file (this is gitignored):
+   ```
+   JWT_SECRET="your-secret"
+   WALMART_CLIENT_ID="your-id"
+   WALMART_CLIENT_SECRET="your-secret"
+   WALMART_CONSUMER_ID="your-consumer-id"
+   ```
+
+5. **Run Development Server:**
    ```bash
    npm run dev
    # To test Cloudflare Functions locally:
