@@ -48,6 +48,24 @@ export function RecipeDetail({ recipeId, onClose }: RecipeDetailProps) {
   if (loading) return null; // Or a smaller loader inside the modal
   if (!recipe) return null;
 
+  const FOOD_IMAGES = [
+    'photo-1546069901-ba9599a7e63c',
+    'photo-1567620905732-2d1ec7bb7445',
+    'photo-1565299624946-b28f40a0ae38',
+    'photo-1482049016688-2d3e1b311543',
+    'photo-1484723088339-0b2830a711d2',
+    'photo-1473093226795-af9932fe5856',
+    'photo-1512621776951-a57141f2eefd',
+    'photo-1540189549336-e6e99c3679fe',
+    'photo-1565958011703-44f9829ba187',
+    'photo-1467003909585-2f8a72700288',
+  ];
+
+  const imageIndex = Math.abs(recipe.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % FOOD_IMAGES.length;
+  const displayImage = recipe.image_url === 'PLACEHOLDER' || !recipe.image_url
+    ? `https://images.unsplash.com/${FOOD_IMAGES[imageIndex]}?w=800&h=600&fit=crop` 
+    : recipe.image_url;
+
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-card w-full max-w-4xl border rounded-2xl shadow-2xl relative my-8 overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -62,7 +80,7 @@ export function RecipeDetail({ recipeId, onClose }: RecipeDetailProps) {
           {/* Left: Image & Info */}
           <div className="relative">
             <img 
-              src={recipe.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800'} 
+              src={displayImage} 
               alt={recipe.title} 
               className="w-full h-full object-cover min-h-[300px] md:min-h-[500px]"
             />

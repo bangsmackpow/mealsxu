@@ -6,6 +6,7 @@ import { RecipeDetail } from './components/RecipeDetail'
 import { Layout } from './components/Layout'
 import { Admin } from './pages/Admin'
 import { MealPlans } from './pages/MealPlans'
+import { Login } from './pages/Login'
 
 const DIETARY_TAGS = [
   'Keto', 'Low Salt', 'Mediterranean', 'Gluten-Free', 
@@ -109,7 +110,7 @@ function Home() {
           {recipes.map(recipe => {
             // Deterministic random image from our high-quality set
             const imageIndex = Math.abs(recipe.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % FOOD_IMAGES.length;
-            const displayImage = recipe.image_url.includes('photo-1500000000000') 
+            const displayImage = recipe.image_url === 'PLACEHOLDER' || !recipe.image_url
               ? `https://images.unsplash.com/${FOOD_IMAGES[imageIndex]}?w=600&h=450&fit=crop` 
               : recipe.image_url;
 
@@ -171,6 +172,7 @@ function App() {
       <Layout onAddRecipe={() => setShowForm(true)}>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/admin/*" element={<Admin />} />
           <Route path="/meal-plans" element={<MealPlans />} />
           {/* Add more routes as needed */}

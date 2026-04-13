@@ -1,6 +1,7 @@
 import { Context, Next, Hono } from 'hono';
 import { handle } from 'hono/cloudflare-pages';
 import { jwt, sign } from 'hono/jwt';
+import bcrypt from 'bcryptjs';
 
 type Bindings = {
   DB: D1Database;
@@ -33,12 +34,17 @@ const adminMiddleware = async (c: Context, next: Next) => {
 app.post('/auth/login', async (c) => {
   const { email, password } = await c.req.json();
   
-  // In a real app, use bcrypt/argon2 to verify password_hash
   const user = await c.env.DB.prepare('SELECT * FROM users WHERE email = ? AND is_archived = 0')
     .bind(email)
     .first();
 
-  if (!user || password !== 'admin123') { // Temporary simple check for dev
+  if (!user) {
+    return c.json({ error: 'Invalid credentials' }, 401);
+  }
+
+  const passwordMatch = await bcrypt.compare(password, user.password_hash as string);
+
+  if (!passwordMatch) {
     return c.json({ error: 'Invalid credentials' }, 401);
   }
 
@@ -63,8 +69,10 @@ app.get('/admin/users', authMiddleware, adminMiddleware, async (c) => {
 app.post('/admin/users', authMiddleware, adminMiddleware, async (c) => {
   const { email, password, role } = await c.req.json();
   const id = crypto.randomUUID();
+  const passwordHash = await bcrypt.hash(password, 10);
+  
   await c.env.DB.prepare('INSERT INTO users (id, email, password_hash, role) VALUES (?, ?, ?, ?)')
-    .bind(id, email, password, role || 'user')
+    .bind(id, email, passwordHash, role || 'user')
     .run();
   return c.json({ success: true, id });
 });
@@ -74,11 +82,12 @@ app.patch('/admin/users/:id', authMiddleware, adminMiddleware, async (c) => {
   const { email, password, role, is_archived } = await c.req.json();
   
   let query = 'UPDATE users SET email = ?, role = ?, is_archived = ?';
-  const params = [email, role, is_archived ? 1 : 0];
+  const params: any[] = [email, role, is_archived ? 1 : 0];
   
   if (password) {
+    const passwordHash = await bcrypt.hash(password, 10);
     query += ', password_hash = ?';
-    params.push(password);
+    params.push(passwordHash);
   }
   
   query += ' WHERE id = ?';

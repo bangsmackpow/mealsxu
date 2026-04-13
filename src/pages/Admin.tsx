@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Users, BookOpen, BarChart3, Shield, Search, MoreVertical, Archive, Key, Trash2, X, AlertCircle } from 'lucide-react';
 
+import { useNavigate } from 'react-router-dom';
+
 interface MetricData {
   totalRecipes: number;
   totalUsers: number;
@@ -21,31 +23,21 @@ export function Admin() {
   const [metrics, setMetrics] = useState<MetricData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'recipes'>('dashboard');
-  
+  const navigate = useNavigate();
+
   // User Edit Modal State
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '', role: 'user' });
 
-  const fetchMetrics = async () => {
-    try {
-      const response = await fetch('/api/admin/metrics', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (response.ok) setMetrics(await response.json());
-    } catch (e) { console.error(e); }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch('/api/admin/users', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (response.ok) setUsers(await response.json());
-    } catch (e) { console.error(e); }
-  };
-
   useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (!user || user.role !== 'admin') {
+      navigate('/login');
+      return;
+    }
+
     Promise.all([fetchMetrics(), fetchUsers()]).finally(() => setLoading(false));
   }, []);
 
