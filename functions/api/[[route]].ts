@@ -33,17 +33,43 @@ const adminMiddleware = async (c: Context, next: Next) => {
 
 app.post('/auth/login', async (c) => {
   try {
-    const { email, password } = await c.req.json();
+    console.log('Login attempt started');
     
+    if (!c.env.JWT_SECRET) {
+      console.error('JWT_SECRET is missing from environment');
+      return c.json({ error: 'Server configuration error' }, 500);
+    }
+
+    const body = await c.req.json().catch(e => {
+      console.error('Failed to parse JSON body:', e);
+      return null;
+    });
+
+    if (!body || !body.email || !body.password) {
+      console.error('Missing email or password in request');
+      return c.json({ error: 'Missing credentials' }, 400);
+    }
+
+    const { email, password } = body;
+    console.log(`Searching for user: ${email}`);
+
     const user = await c.env.DB.prepare('SELECT * FROM users WHERE email = ? AND is_archived = 0')
       .bind(email)
       .first();
 
     if (!user) {
+      console.log('User not found or archived');
       return c.json({ error: 'Invalid credentials' }, 401);
     }
 
+    console.log('User found, verifying password');
+    if (!user.password_hash) {
+      console.error('User record missing password_hash');
+      return c.json({ error: 'Invalid user record' }, 500);
+    }
+
     const passwordMatch = bcrypt.compareSync(password, user.password_hash as string);
+    console.log(`Password match: ${passwordMatch}`);
 
     if (!passwordMatch) {
       return c.json({ error: 'Invalid credentials' }, 401);
@@ -56,11 +82,13 @@ app.post('/auth/login', async (c) => {
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24h
     };
 
+    console.log('Signing JWT');
     const token = await sign(payload, c.env.JWT_SECRET);
+    console.log('Login successful');
     return c.json({ token, user: { id: user.id, email: user.email, role: user.role } });
   } catch (err: any) {
-    console.error('Login Error:', err);
-    return c.json({ error: 'Internal Server Error', details: err.message }, 500);
+    console.error('CRITICAL Login Error:', err);
+    return c.json({ error: 'Internal Server Error', details: err.message, stack: err.stack }, 500);
   }
 });
 
