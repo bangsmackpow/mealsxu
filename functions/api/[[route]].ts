@@ -74,7 +74,7 @@ app.get('/admin/users', authMiddleware, adminMiddleware, async (c) => {
 app.post('/admin/users', authMiddleware, adminMiddleware, async (c) => {
   const { email, password, role } = await c.req.json();
   const id = crypto.randomUUID();
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = bcrypt.hashSync(password, 10);
   
   await c.env.DB.prepare('INSERT INTO users (id, email, password_hash, role) VALUES (?, ?, ?, ?)')
     .bind(id, email, passwordHash, role || 'user')
@@ -90,7 +90,7 @@ app.patch('/admin/users/:id', authMiddleware, adminMiddleware, async (c) => {
   const params: any[] = [email, role, is_archived ? 1 : 0];
   
   if (password) {
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = bcrypt.hashSync(password, 10);
     query += ', password_hash = ?';
     params.push(passwordHash);
   }
