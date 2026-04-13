@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Context, Next, Hono } from 'hono';
 import { handle } from 'hono/cloudflare-pages';
 import { jwt } from 'hono/jwt';
 
@@ -14,7 +14,7 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>().basePath('/api');
 
 // Middleware for auth
-const authMiddleware = (c: any, next: any) => {
+const authMiddleware = (c: Context, next: Next) => {
   const middleware = jwt({ secret: c.env.JWT_SECRET });
   return middleware(c, next);
 };
@@ -91,7 +91,13 @@ app.post('/user/recipes', authMiddleware, async (c) => {
     'INSERT INTO ingredients (id, recipe_id, name, quantity, unit) VALUES (?, ?, ?, ?, ?)'
   );
   
-  const ingredientQueries = recipeData.ingredients.map((ing: any) => 
+  interface RecipeIngredient {
+    name: string;
+    quantity: number;
+    unit: string;
+  }
+
+  const ingredientQueries = recipeData.ingredients.map((ing: RecipeIngredient) => 
     stmt.bind(crypto.randomUUID(), recipeId, ing.name, ing.quantity, ing.unit)
   );
   

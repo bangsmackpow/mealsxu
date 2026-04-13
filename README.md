@@ -18,6 +18,8 @@ Mealsxu is a high-performance, edge-first recipe platform built on **Cloudflare 
 - **Database:** Cloudflare D1 (SQL) for user profiles, recipes, and dietary tags.
 - **Storage:** Cloudflare R2 for recipe image uploads.
 - **Auth:** Custom JWT-based authentication stored in D1.
+- **Standards:** ESLint 9 (Flat Config) with strict TypeScript rules.
+- **Guidance:** Following [Cloudflare Skills](https://github.com/cloudflare/skills) best practices.
 - **Integration:** Walmart.io Commerce APIs (I2P V2).
 
 ## 🛠️ Local Development
@@ -36,6 +38,11 @@ Mealsxu is a high-performance, edge-first recipe platform built on **Cloudflare 
 2. **Install dependencies:**
    ```bash
    npm install
+   ```
+
+3. **Linting:**
+   ```bash
+   npm run lint
    ```
 
 3. **Database Setup:**
