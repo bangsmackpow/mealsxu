@@ -1,0 +1,19 @@
+name = "mealsxu"
+compatibility_date = "2024-04-03"
+pages_build_output_dir = "./dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mealsxu-db"
+database_id = "your-d1-db-id" # user will replace this or we can leave as placeholder
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "mealsxu-images"
+
+[vars]
+# API keys (use wrangler secret for real keys)
+WALMART_CLIENT_ID = "placeholder"
+WALMART_CLIENT_SECRET = "placeholder"
+WALMART_CONSUMER_ID = "placeholder"
+JWT_SECRET = "super-secret-key"
