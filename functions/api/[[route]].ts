@@ -32,31 +32,36 @@ const adminMiddleware = async (c: Context, next: Next) => {
 // --- Auth Routes ---
 
 app.post('/auth/login', async (c) => {
-  const { email, password } = await c.req.json();
-  
-  const user = await c.env.DB.prepare('SELECT * FROM users WHERE email = ? AND is_archived = 0')
-    .bind(email)
-    .first();
+  try {
+    const { email, password } = await c.req.json();
+    
+    const user = await c.env.DB.prepare('SELECT * FROM users WHERE email = ? AND is_archived = 0')
+      .bind(email)
+      .first();
 
-  if (!user) {
-    return c.json({ error: 'Invalid credentials' }, 401);
+    if (!user) {
+      return c.json({ error: 'Invalid credentials' }, 401);
+    }
+
+    const passwordMatch = bcrypt.compareSync(password, user.password_hash as string);
+
+    if (!passwordMatch) {
+      return c.json({ error: 'Invalid credentials' }, 401);
+    }
+
+    const payload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24h
+    };
+
+    const token = await sign(payload, c.env.JWT_SECRET);
+    return c.json({ token, user: { id: user.id, email: user.email, role: user.role } });
+  } catch (err: any) {
+    console.error('Login Error:', err);
+    return c.json({ error: 'Internal Server Error', details: err.message }, 500);
   }
-
-  const passwordMatch = await bcrypt.compare(password, user.password_hash as string);
-
-  if (!passwordMatch) {
-    return c.json({ error: 'Invalid credentials' }, 401);
-  }
-
-  const payload = {
-    id: user.id,
-    email: user.email,
-    role: user.role,
-    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24h
-  };
-
-  const token = await sign(payload, c.env.JWT_SECRET);
-  return c.json({ token, user: { id: user.id, email: user.email, role: user.role } });
 });
 
 // --- User Management (Admin Only) ---
