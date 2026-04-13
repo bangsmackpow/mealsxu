@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { Search, ShoppingCart, User, Plus, ExternalLink, ArrowRight } from 'lucide-react'
+import { Search, ShoppingCart, User, Plus, ExternalLink, ArrowRight, Utensils } from 'lucide-react'
 import { RecipeForm } from './components/RecipeForm'
 import { RecipeDetail } from './components/RecipeDetail'
 import { Layout } from './components/Layout'
@@ -22,19 +22,6 @@ interface Recipe {
   source_name?: string;
   source_url?: string;
 }
-
-const FOOD_IMAGES = [
-  'photo-1546069901-ba9599a7e63c',
-  'photo-1567620905732-2d1ec7bb7445',
-  'photo-1565299624946-b28f40a0ae38',
-  'photo-1482049016688-2d3e1b311543',
-  'photo-1484723088339-0b2830a711d2',
-  'photo-1473093226795-af9932fe5856',
-  'photo-1512621776951-a57141f2eefd',
-  'photo-1540189549336-e6e99c3679fe',
-  'photo-1565958011703-44f9829ba187',
-  'photo-1467003909585-2f8a72700288',
-];
 
 function Home() {
   const [activeTag, setActiveTag] = useState<string | null>(null)
@@ -107,50 +94,13 @@ function Home() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {recipes.map(recipe => {
-            // Deterministic random image from our high-quality set
-            const imageIndex = Math.abs(recipe.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % FOOD_IMAGES.length;
-            const displayImage = recipe.image_url === 'PLACEHOLDER' || !recipe.image_url
-              ? `https://images.unsplash.com/${FOOD_IMAGES[imageIndex]}?w=600&h=450&fit=crop` 
-              : recipe.image_url;
-
-            return (
-              <div 
-                key={recipe.id} 
-                onClick={() => setSelectedRecipeId(recipe.id)}
-                className="group cursor-pointer bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden hover:shadow-2xl hover:shadow-primary/5 transition-all hover:scale-[1.02] active:scale-95 flex flex-col h-full"
-              >
-                <div className="aspect-[4/3] bg-muted relative overflow-hidden">
-                  <img 
-                    src={displayImage} 
-                    alt={recipe.title} 
-                    className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute top-3 left-3">
-                    <span className="bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary shadow-sm">
-                      Featured
-                    </span>
-                  </div>
-                </div>
-                <div className="p-5 space-y-3 flex flex-col flex-1">
-                  <h3 className="font-black text-xl leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-1">{recipe.title}</h3>
-                  <p className="text-sm text-muted-foreground font-medium line-clamp-2 leading-relaxed">
-                    {recipe.description || 'A delicious hearty meal perfect for cold nights. Bulk-friendly and family approved.'}
-                  </p>
-                  
-                  <div className="flex items-center justify-between pt-2 border-t mt-auto">
-                    <div className="text-sm">
-                      <span className="font-black text-primary text-lg">$2.45</span>
-                      <span className="text-muted-foreground font-bold italic"> / meal</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-primary font-black text-xs uppercase tracking-tighter group-hover:gap-2 transition-all">
-                      View <ArrowRight className="h-3 w-3" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {recipes.map(recipe => (
+            <RecipeCard 
+              key={recipe.id} 
+              recipe={recipe} 
+              onClick={() => setSelectedRecipeId(recipe.id)} 
+            />
+          ))}
         </div>
       )}
 
@@ -164,6 +114,54 @@ function Home() {
   )
 }
 
+function RecipeCard({ recipe, onClick }: { recipe: Recipe, onClick: () => void }) {
+  const [imageError, setImageError] = useState(false);
+
+  return (
+    <div 
+      onClick={onClick}
+      className="group cursor-pointer bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden hover:shadow-2xl hover:shadow-primary/5 transition-all hover:scale-[1.02] active:scale-95 flex flex-col h-full"
+    >
+      <div className="aspect-[4/3] bg-muted relative overflow-hidden">
+        {!imageError ? (
+          <img 
+            src={recipe.image_url} 
+            alt={recipe.title} 
+            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-muted text-muted-foreground p-4 text-center">
+            <Utensils className="h-12 w-12 mb-2 opacity-20" />
+            <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Image Unavailable</span>
+          </div>
+        )}
+        <div className="absolute top-3 left-3">
+          <span className="bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-primary shadow-sm">
+            {recipe.source_name || 'Community'}
+          </span>
+        </div>
+      </div>
+      <div className="p-5 space-y-3 flex flex-col flex-1">
+        <h3 className="font-black text-xl leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-1">{recipe.title}</h3>
+        <p className="text-sm text-muted-foreground font-medium line-clamp-2 leading-relaxed">
+          {recipe.description || 'A delicious hearty meal perfect for cold nights. Bulk-friendly and family approved.'}
+        </p>
+        
+        <div className="flex items-center justify-between pt-2 border-t mt-auto">
+          <div className="text-sm">
+            <span className="font-black text-primary text-lg">$2.45</span>
+            <span className="text-muted-foreground font-bold italic"> / meal</span>
+          </div>
+          <div className="flex items-center gap-1 text-primary font-black text-xs uppercase tracking-tighter group-hover:gap-2 transition-all">
+            View <ArrowRight className="h-3 w-3" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [showForm, setShowForm] = useState(false)
 
@@ -175,15 +173,13 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/admin/*" element={<Admin />} />
           <Route path="/meal-plans" element={<MealPlans />} />
-          {/* Add more routes as needed */}
         </Routes>
       </Layout>
 
-      {/* Recipe Form Modal */}
       {showForm && (
         <RecipeForm 
           onClose={() => setShowForm(false)} 
-          onSuccess={() => window.location.reload()} // Quick refresh for now
+          onSuccess={() => window.location.reload()} 
         />
       )}
     </Router>
