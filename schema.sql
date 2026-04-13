@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS recipes (
     instructions TEXT,
     image_url TEXT,
     servings INTEGER DEFAULT 4,
+    source_url TEXT,             -- Attribution URL
+    source_name TEXT,            -- Attribution site name (e.g., "Taste of Home")
     is_archived BOOLEAN DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
