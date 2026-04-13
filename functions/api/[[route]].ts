@@ -137,4 +137,9 @@ app.get('/admin/metrics', authMiddleware, async (c) => {
   return c.json({ users: 0, recipes: 0, clicks: 0 });
 });
 
+app.get('/admin/users', authMiddleware, async (c) => {
+  const { results } = await c.env.DB.prepare('SELECT id, email, role, created_at FROM users ORDER BY created_at DESC').all();
+  return c.json(results);
+});
+
 export const onRequest = handle(app);
