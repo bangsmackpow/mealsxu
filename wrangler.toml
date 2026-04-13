@@ -10,10 +10,3 @@ database_id = "fd57662d-e3ce-4245-afad-e4fb108d3fde" # user will replace this or
 [[r2_buckets]]
 binding = "R2"
 bucket_name = "mealsxu-images"
-
-[vars]
-# API keys (use wrangler secret for real keys)
-WALMART_CLIENT_ID = "placeholder"
-WALMART_CLIENT_SECRET = "placeholder"
-WALMART_CONSUMER_ID = "placeholder"
-JWT_SECRET = "super-secret-key"
