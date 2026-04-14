@@ -35,9 +35,9 @@ app.post('/auth/login', async (c) => {
   try {
     console.log('Login attempt started');
     
-    if (!c.env.JWT_SECRET) {
-      console.error('JWT_SECRET is missing from environment');
-      return c.json({ error: 'Server configuration error' }, 500);
+    if (!c.env.JWT_SECRET || c.env.JWT_SECRET === 'super-secret-key') {
+      console.error('JWT_SECRET is missing or using default placeholder');
+      return c.json({ error: 'Server configuration error: JWT_SECRET not found. Please check Cloudflare environment variables and redeploy.' }, 500);
     }
 
     const body = await c.req.json().catch(e => {
