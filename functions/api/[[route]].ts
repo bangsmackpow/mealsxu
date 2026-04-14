@@ -18,7 +18,10 @@ const app = new Hono<{ Bindings: Bindings }>().basePath('/api');
 // --- Middleware ---
 
 const authMiddleware = (c: Context, next: Next) => {
-  const middleware = jwt({ secret: c.env.JWT_SECRET });
+  const middleware = jwt({ 
+    secret: c.env.JWT_SECRET,
+    alg: 'HS256'
+  });
   return middleware(c, next);
 };
 
