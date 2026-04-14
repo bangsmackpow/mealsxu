@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, ShoppingCart, Calendar, Clock, Users, ExternalLink, Printer, Utensils, AlertTriangle } from 'lucide-react';
+import { X, ShoppingCart, Calendar, Clock, Users, ExternalLink, Printer, Utensils, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface Ingredient {
   id: string;
@@ -56,6 +56,10 @@ export function RecipeDetail({ recipeId, onClose }: RecipeDetailProps) {
     } catch (e) { console.error(e); }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   useEffect(() => {
     const fetchRecipe = async () => {
       try {
@@ -74,12 +78,52 @@ export function RecipeDetail({ recipeId, onClose }: RecipeDetailProps) {
   if (loading) return null;
   if (!recipe) return null;
 
+  const displayImage = recipe.image_url?.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(recipe.image_url)}` : recipe.image_url;
+
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto">
+      {/* Hidden Printable Area */}
+      <div id="printable-recipe" className="hidden">
+        <div className="print-col-left">
+          <h2 className="italic tracking-tighter uppercase" style={{ color: '#f97316' }}>Mealsxu</h2>
+          <div className="flex items-center gap-4 text-xs font-bold uppercase tracking-widest mb-6 opacity-60">
+            <span>{recipe.servings} Servings</span>
+            <span>35 Mins Prep</span>
+          </div>
+          <img src={displayImage} alt="" className="rounded-2xl" />
+          <h2 className="text-3xl font-black mb-4">{recipe.title}</h2>
+          <h3 className="font-bold text-xl uppercase border-b-2 border-black pb-2 mt-8">Ingredients</h3>
+          <ul className="space-y-2 mt-4">
+            {recipe.ingredients.map(ing => (
+              <li key={ing.id} className="flex justify-between border-b pb-1 border-gray-100">
+                <span className="font-bold">{ing.name}</span>
+                <span className="opacity-60">{ing.quantity} {ing.unit}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="print-col-right">
+          <h3 className="font-bold text-xl uppercase border-b-2 border-black pb-2">Kitchen Instructions</h3>
+          <div className="space-y-4 mt-6">
+            {recipe.instructions.split('\n').filter(line => line.trim()).map((step, idx) => (
+              <div key={idx} className="flex gap-4">
+                <span className="font-black opacity-30">{idx + 1}.</span>
+                <p className="font-medium leading-relaxed">{step.replace(/^\d+\.\s*/, '')}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-12 pt-8 border-t border-gray-200">
+            <p className="text-xs font-bold uppercase tracking-widest opacity-40 mb-2">Original Source</p>
+            <p className="text-sm font-black">{recipe.source_name || 'Mealsxu Culinary Partner'}</p>
+            <p className="text-[10px] break-all opacity-60 mt-1">{recipe.source_url}</p>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-card w-full max-w-5xl border-2 border-border/50 rounded-3xl shadow-2xl relative my-8 overflow-hidden animate-in fade-in zoom-in duration-300">
         <button 
           onClick={onClose}
-          className="absolute right-6 top-6 p-2 bg-white/80 hover:bg-white text-foreground border-2 border-border/20 rounded-xl transition-all z-20 shadow-sm"
+          className="absolute right-6 top-6 p-2 bg-white/80 hover:bg-white text-foreground border-2 border-border/20 rounded-xl transition-all z-20 shadow-sm no-print"
         >
           <X className="h-6 w-6 font-black" />
         </button>
@@ -89,7 +133,7 @@ export function RecipeDetail({ recipeId, onClose }: RecipeDetailProps) {
           <div className="lg:col-span-2 relative min-h-[400px] lg:min-h-0 bg-muted">
             {!imageError ? (
               <img 
-                src={recipe.image_url?.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(recipe.image_url)}` : recipe.image_url} 
+                src={displayImage} 
                 alt={recipe.title} 
                 className="w-full h-full object-cover"
                 onError={() => setImageError(true)}
@@ -126,7 +170,10 @@ export function RecipeDetail({ recipeId, onClose }: RecipeDetailProps) {
                 <Clock className="h-4 w-4 text-primary" />
                 <span>35 Mins Prep</span>
               </div>
-              <button className="flex items-center gap-2.5 hover:text-primary transition-colors ml-auto group">
+              <button 
+                onClick={handlePrint}
+                className="flex items-center gap-2.5 hover:text-primary transition-colors ml-auto group"
+              >
                 <Printer className="h-4 w-4 group-hover:scale-110 transition-transform" />
                 <span>Print Card</span>
               </button>
@@ -142,7 +189,7 @@ export function RecipeDetail({ recipeId, onClose }: RecipeDetailProps) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {recipe.ingredients.map(ing => (
                   <div key={ing.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border-2 border-transparent hover:border-primary/10 transition-all group">
-                    <span className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">{ing.name}</span>
+                    <span className="font-bold text-sm text-foreground group-hover:text-primary transition-colors capitalize">{ing.name}</span>
                     <span className="text-[10px] font-black text-muted-foreground bg-white px-2 py-1 rounded-lg border shadow-sm">
                       {ing.quantity} {ing.unit}
                     </span>

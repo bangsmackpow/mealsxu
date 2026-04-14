@@ -5,74 +5,69 @@ Mealsxu is a high-performance, edge-first recipe platform built on **Cloudflare 
 ## 🎨 Features
 
 - **Edge-Powered Backend:** Built with Hono for sub-millisecond API response times across the globe.
-- **Midwest Dietary Focus:** Specialized filters for local preferences, including **Keto**, **Low Salt**, **Gluten-Free**, and **Hotdish Friendly**.
-- **Walmart Cart Integration:** Seamlessly map recipe ingredients to real-time Walmart inventory and create shoppable carts with one click.
-- **Bulk Order Optimization:** Real-time pricing with "Price per Meal" and "Bulk Order" cost breakdowns.
-- **Unified UI:** A clean, modern dashboard built with **shadcn/ui**, **Tailwind CSS**, and **Lucide** icons.
-- **Image-to-Recipe:** Support for image uploads stored on **Cloudflare R2** with metadata tracked in **Cloudflare D1**.
+- **Intelligent Dietary Filtering:** Automated ingredient scanning for **Keto**, **Low Salt**, **Gluten-Free**, **Dairy Free**, and **Vegetarian** compliance.
+- **Midwest Focus:** Specialized "Hotdish Friendly" logic for local favorites.
+- **Walmart Cart Integration:** Aggregated "Grocery Payloads" mapped directly to real Walmart inventory with one-click "Buy Now" bundles.
+- **Secure Authentication:** Multi-auth system with **Google OAuth**, **Bcrypt** hashed passwords, and **Stalwart SMTP** email verification via Cloudflare Worker Sockets.
+- **High-Fidelity Content:** 50+ real recipes from curated sources with verified images and mandatory attribution for liability protection.
+- **Admin Command Center:** Full user management (CRUD/Archive) and live telemetry metrics (Views, Conversions).
+- **Weekly Strategy:** Persistent meal planning with real-time cost estimation and bulk-purchase optimization.
+- **High-Performance Image Proxy:** Bypasses CORS and hotlinking blocks to ensure every dish photo loads perfectly.
 
 ## 🚀 Tech Stack
 
-- **Frontend:** React (TypeScript), Vite, Tailwind CSS, shadcn/ui.
+- **Frontend:** React 18, Vite 8, Tailwind CSS, shadcn/ui, Lucide Icons.
 - **Backend:** Hono running on Cloudflare Pages Functions.
-- **Database:** Cloudflare D1 (SQL) for user profiles, recipes, and dietary tags.
+- **Database:** Cloudflare D1 (SQL) for users, recipes, plans, and metrics.
 - **Storage:** Cloudflare R2 for recipe image uploads.
-- **Auth:** Custom JWT-based authentication stored in D1.
+- **Auth:** JWT-based session management with HS256 signing.
 - **Standards:** ESLint 9 (Flat Config) with strict TypeScript rules.
-- **Guidance:** Following [Cloudflare Skills](https://github.com/cloudflare/skills) best practices.
-- **Integration:** Walmart.io Commerce APIs (I2P V2).
 
 ## 🛠️ Local Development
 
 ### Prerequisites
-- Node.js (v18+)
+- Node.js (v22+)
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-config/)
 
 ### Setup
-1. **Clone the repository:**
+1. **Clone & Install:**
    ```bash
    git clone https://github.com/bangsmackpow/mealxu.git
    cd mealxu
-   ```
-
-2. **Install dependencies:**
-   ```bash
    npm install
    ```
 
-3. **Linting:**
+2. **Infrastructure:**
    ```bash
-   npm run lint
-   ```
-
-3. **Database Setup:**
-   The database `mealsxu-db` is already initialized on Cloudflare. To run locally, initialize your local D1:
-   ```bash
+   # Initialize local D1
    npx wrangler d1 execute mealsxu-db --local --file=schema.sql
+   # Seed with high-fidelity data
+   node scripts/seed_database.cjs
    ```
 
-4. **Secrets and Environment Variables:**
-   Set up your secrets for local development in a `.dev.vars` file (this is gitignored):
-   ```
+3. **Secrets:** Create `.dev.vars` for local development:
+   ```env
    JWT_SECRET="your-secret"
    WALMART_CLIENT_ID="your-id"
    WALMART_CLIENT_SECRET="your-secret"
    WALMART_CONSUMER_ID="your-consumer-id"
+   SMTP_HOST="your-stalwart-host"
+   ...
    ```
 
-5. **Run Development Server:**
+4. **Run:**
    ```bash
    npm run dev
-   # To test Cloudflare Functions locally:
+   # For full stack testing:
    npm run pages:dev
    ```
 
-## 📈 Roadmap & Monetization
+## 📈 Roadmap
 
-- [ ] **Walmart Affiliate Integration:** Earn commissions on every item added to a user's cart.
-- [ ] **CPG Ad Slots:** Targeted advertising for grocery brands based on recipe ingredients.
-- [ ] **Meal Planning:** Recurring weekly shopping lists for premium users.
-- [ ] **Mobile App:** Potential export via Capacitor or React Native.
+- [x] **Intelligent Tagging:** Automatic filter compliance based on ingredient lists.
+- [x] **Secure User Profiles:** Self-service password management.
+- [ ] **Print Protocol:** Foldable "Hamburger Style" clean recipe printouts.
+- [ ] **Mobile Export:** PWA/Capacitor integration for in-store usage.
 
 ## 📄 License
 MIT License. Created by [bangsmackpow](https://github.com/bangsmackpow).

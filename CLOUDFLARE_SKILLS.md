@@ -4,16 +4,18 @@ This project leverages [Cloudflare Skills](https://github.com/cloudflare/skills)
 
 ## Core Principles Followed
 - **Compute:** Using Hono on Cloudflare Pages Functions for globally distributed, sub-millisecond API response times.
-- **Storage (SQL):** Leveraging Cloudflare D1 for structured data (recipes, ingredients, users).
-- **Storage (Object):** Using Cloudflare R2 for recipe images with metadata stored in D1.
-- **Security:** Managing secrets via Cloudflare Dashboard/Secrets to prevent credential leakage.
+- **Storage (SQL):** Leveraging Cloudflare D1 for structured data (recipes, ingredients, users, meal plans).
+- **Storage (Object):** Using Cloudflare R2 for recipe image uploads.
+- **Security:** Managing secrets via Cloudflare Dashboard/Secrets. Using Bcrypt for secure hashing at the edge.
+- **Networking:** Utilizing `cloudflare:sockets` for outbound TCP connections to personal mail servers (Stalwart).
+- **Edge Resilience:** Implementation of an Image Proxy to bypass cross-origin restrictions and ensure 100% asset delivery.
 
 ## AI Agent Guidance
 When operating on this project, AI agents should prioritize:
 1. **The Edge:** Keep logic as close to the user as possible (Hono + D1).
-2. **Type Safety:** Maintain strict TypeScript definitions (e.g., `RecipeIngredient`, `Context`, `Next`).
-3. **Infrastructure as Code:** Ensure `wrangler.toml` and `schema.sql` are up-to-date.
-4. **Resilience:** Use proper error handling for network-bound operations (e.g., R2 uploads, Walmart API calls).
+2. **Type Safety:** Maintain strict TypeScript definitions (ESLint 9 Flat Config).
+3. **Connectivity:** Use `fetch` for standard APIs and `cloudflare:sockets` for lower-level protocols (SMTP).
+4. **Performance:** Stream R2 objects and proxy responses to minimize memory overhead.
 
 ---
 *Referenced from https://github.com/cloudflare/skills (2026 Edition)*
