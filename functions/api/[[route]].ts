@@ -92,6 +92,46 @@ app.post('/auth/login', async (c) => {
   }
 });
 
+// --- User Profile (Self-Service) ---
+
+app.patch('/user/profile', authMiddleware, async (c) => {
+  try {
+    const user = c.get('jwtPayload');
+    const { email, oldPassword, newPassword } = await c.req.json();
+
+    // 1. Fetch current user
+    const dbUser = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?')
+      .bind(user.id)
+      .first();
+
+    if (!dbUser) return c.json({ error: 'User not found' }, 404);
+
+    // 2. If changing password, verify old one
+    if (newPassword) {
+      if (!oldPassword) return c.json({ error: 'Current password required to set a new one' }, 400);
+      const isMatch = bcrypt.compareSync(oldPassword, dbUser.password_hash as string);
+      if (!isMatch) return c.json({ error: 'Incorrect current password' }, 401);
+    }
+
+    // 3. Update record
+    let query = 'UPDATE users SET email = ?';
+    const params = [email || dbUser.email];
+
+    if (newPassword) {
+      query += ', password_hash = ?';
+      params.push(bcrypt.hashSync(newPassword, 10));
+    }
+
+    query += ' WHERE id = ?';
+    params.push(user.id);
+
+    await c.env.DB.prepare(query).bind(...params).run();
+    return c.json({ success: true });
+  } catch (err: any) {
+    return c.json({ error: 'Failed to update profile', details: err.message }, 500);
+  }
+});
+
 // --- User Management (Admin Only) ---
 
 app.get('/admin/users', authMiddleware, adminMiddleware, async (c) => {
