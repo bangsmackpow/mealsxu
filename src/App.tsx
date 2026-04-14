@@ -1,12 +1,37 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { Search, ShoppingCart, User, Plus, ExternalLink, ArrowRight, Utensils } from 'lucide-react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { Search, ShoppingCart, User, Plus, ExternalLink, ArrowRight, Utensils, AlertCircle } from 'lucide-react'
 import { RecipeForm } from './components/RecipeForm'
 import { RecipeDetail } from './components/RecipeDetail'
 import { Layout } from './components/Layout'
 import { Admin } from './pages/Admin'
 import { MealPlans } from './pages/MealPlans'
 import { Login } from './pages/Login'
+
+// Error Boundary Component
+function ErrorFallback({ error }: { error: Error }) {
+  return (
+    <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
+      <div className="bg-white border-2 border-red-200 rounded-3xl p-8 max-w-md w-full shadow-2xl">
+        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+        <h1 className="text-2xl font-black uppercase tracking-tighter mb-2">Application Crash</h1>
+        <p className="text-muted-foreground font-medium mb-6">Something went wrong while rendering the interface.</p>
+        <pre className="bg-red-50 p-4 rounded-xl text-xs font-mono text-red-800 overflow-auto max-h-40 mb-6 border border-red-100">
+          {error.message}
+        </pre>
+        <button 
+          onClick={() => {
+            localStorage.clear();
+            window.location.href = '/';
+          }}
+          className="w-full py-4 bg-red-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-red-700 transition-all"
+        >
+          Reset Application & Home
+        </button>
+      </div>
+    </div>
+  )
+}
 
 const DIETARY_TAGS = [
   'Keto', 'Low Salt', 'Mediterranean', 'Gluten-Free', 
@@ -34,9 +59,10 @@ function Home() {
     try {
       const response = await fetch('/api/recipes')
       const data = await response.json()
-      setRecipes(data)
+      setRecipes(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching recipes:', error)
+      setRecipes([])
     } finally {
       setLoading(false)
     }
@@ -167,6 +193,24 @@ function RecipeCard({ recipe, onClick }: { recipe: Recipe, onClick: () => void }
 
 function App() {
   const [showForm, setShowForm] = useState(false)
+  const [appError, setAppError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    const errorHandler = (e: PromiseRejectionEvent | ErrorEvent) => {
+      const error = 'reason' in e ? e.reason : e.error;
+      console.error('Captured Global Error:', error);
+      setAppError(error instanceof Error ? error : new Error(String(error)));
+    };
+
+    window.addEventListener('error', errorHandler);
+    window.addEventListener('unhandledrejection', errorHandler);
+    return () => {
+      window.removeEventListener('error', errorHandler);
+      window.removeEventListener('unhandledrejection', errorHandler);
+    };
+  }, []);
+
+  if (appError) return <ErrorFallback error={appError} />;
 
   return (
     <Router>
@@ -176,9 +220,11 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/admin/*" element={<Admin />} />
           <Route path="/meal-plans" element={<MealPlans />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
 
+      {/* Recipe Form Modal */}
       {showForm && (
         <RecipeForm 
           onClose={() => setShowForm(false)} 

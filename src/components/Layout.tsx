@@ -10,8 +10,14 @@ interface LayoutProps {
 export function Layout({ children, onAddRecipe }: LayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const userStr = localStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
+  
+  let user = null;
+  try {
+    const userStr = localStorage.getItem('user');
+    user = userStr ? JSON.parse(userStr) : null;
+  } catch (e) {
+    console.error('Layout: Failed to parse user data', e);
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('token');
