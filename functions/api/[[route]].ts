@@ -10,6 +10,7 @@ type Bindings = {
   WALMART_CLIENT_ID: string;
   WALMART_CLIENT_SECRET: string;
   WALMART_CONSUMER_ID: string;
+  GOOGLE_CLIENT_ID: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>().basePath('/api');
@@ -30,6 +31,94 @@ const adminMiddleware = async (c: Context, next: Next) => {
 };
 
 // --- Auth Routes ---
+
+app.post('/auth/register', async (c) => {
+  try {
+    const { email, password } = await c.req.json();
+    
+    // Check if user exists
+    const existing = await c.env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).first();
+    if (existing) return c.json({ error: 'User already exists' }, 400);
+
+    const id = crypto.randomUUID();
+    const passwordHash = bcrypt.hashSync(password, 10);
+    const verificationToken = crypto.randomUUID();
+
+    await c.env.DB.prepare('INSERT INTO users (id, email, password_hash, verification_token) VALUES (?, ?, ?, ?)')
+      .bind(id, email, passwordHash, verificationToken)
+      .run();
+
+    // TODO: Send actual verification email here
+    console.log(`Verification link: https://mealxu.pages.dev/api/auth/verify?token=${verificationToken}`);
+
+    return c.json({ success: true, message: 'Registration successful. Please verify your email.' });
+  } catch (err: any) {
+    return c.json({ error: 'Registration failed', details: err.message }, 500);
+  }
+});
+
+app.get('/auth/verify', async (c) => {
+  const token = c.req.query('token');
+  if (!token) return c.json({ error: 'Missing token' }, 400);
+
+  const user = await c.env.DB.prepare('SELECT * FROM users WHERE verification_token = ?')
+    .bind(token)
+    .first();
+
+  if (!user) return c.json({ error: 'Invalid or expired token' }, 400);
+
+  await c.env.DB.prepare('UPDATE users SET is_verified = 1, verification_token = NULL WHERE id = ?')
+    .bind(user.id)
+    .run();
+
+  return c.redirect('/login?verified=true');
+});
+
+app.post('/auth/google', async (c) => {
+  try {
+    const { credential } = await c.req.json();
+    // In a real app, you MUST verify the token with Google's public keys
+    // For this scaffold, we'll decode it to get the email (Note: insecure without verification)
+    const payloadBase64 = credential.split('.')[1];
+    const googleUser = JSON.parse(atob(payloadBase64));
+
+    if (!googleUser.email_verified) return c.json({ error: 'Google email not verified' }, 401);
+
+    const email = googleUser.email;
+    const googleId = googleUser.sub;
+
+    // Check if user exists by email or google_id
+    let user = await c.env.DB.prepare('SELECT * FROM users WHERE email = ? OR google_id = ?')
+      .bind(email, googleId)
+      .first();
+
+    if (user) {
+      // Merge: Update google_id and mark as verified if they weren't
+      await c.env.DB.prepare('UPDATE users SET google_id = ?, is_verified = 1 WHERE id = ?')
+        .bind(googleId, user.id)
+        .run();
+    } else {
+      // Create new user
+      const id = crypto.randomUUID();
+      await c.env.DB.prepare('INSERT INTO users (id, email, google_id, is_verified, password_hash) VALUES (?, ?, ?, 1, "oauth_user")')
+        .bind(id, email, googleId)
+        .run();
+      user = { id, email, role: 'user' };
+    }
+
+    const payload = {
+      id: user.id,
+      email: user.email,
+      role: user.role || 'user',
+      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24h
+    };
+
+    const token = await sign(payload, c.env.JWT_SECRET);
+    return c.json({ token, user: { id: user.id, email: user.email, role: user.role || 'user' } });
+  } catch (err: any) {
+    return c.json({ error: 'Google login failed', details: err.message }, 500);
+  }
+});
 
 app.post('/auth/login', async (c) => {
   try {

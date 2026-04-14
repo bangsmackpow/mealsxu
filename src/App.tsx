@@ -8,6 +8,7 @@ import { Admin } from './pages/Admin'
 import { MealPlans } from './pages/MealPlans'
 import { Login } from './pages/Login'
 import { Profile } from './pages/Profile'
+import { Register } from './pages/Register'
 
 // Error Boundary Component
 function ErrorFallback({ error }: { error: Error }) {
@@ -219,6 +220,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin/*" element={<Admin />} />
           <Route path="/meal-plans" element={<MealPlans />} />
