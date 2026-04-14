@@ -64,7 +64,7 @@ export function RecipeDetail({ recipeId, onClose }: RecipeDetailProps) {
           <div className="lg:col-span-2 relative min-h-[400px] lg:min-h-0 bg-muted">
             {!imageError ? (
               <img 
-                src={recipe.image_url} 
+                src={recipe.image_url?.startsWith('http') ? `/api/proxy-image?url=${encodeURIComponent(recipe.image_url)}` : recipe.image_url} 
                 alt={recipe.title} 
                 className="w-full h-full object-cover"
                 onError={() => setImageError(true)}

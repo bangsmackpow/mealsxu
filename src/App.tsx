@@ -116,6 +116,9 @@ function Home() {
 
 function RecipeCard({ recipe, onClick }: { recipe: Recipe, onClick: () => void }) {
   const [imageError, setImageError] = useState(false);
+  const displayImage = recipe.image_url?.startsWith('http') 
+    ? `/api/proxy-image?url=${encodeURIComponent(recipe.image_url)}`
+    : recipe.image_url;
 
   return (
     <div 
@@ -125,7 +128,7 @@ function RecipeCard({ recipe, onClick }: { recipe: Recipe, onClick: () => void }
       <div className="aspect-[4/3] bg-muted relative overflow-hidden">
         {!imageError ? (
           <img 
-            src={recipe.image_url} 
+            src={displayImage} 
             alt={recipe.title} 
             className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
             onError={() => setImageError(true)}
