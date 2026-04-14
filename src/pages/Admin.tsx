@@ -31,8 +31,16 @@ export function Admin() {
   const [formData, setFormData] = useState({ email: '', password: '', role: 'user' });
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : null;
+    let user;
+    try {
+      const userStr = localStorage.getItem('user');
+      user = userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+      console.error('Failed to parse user data:', e);
+      navigate('/login');
+      return;
+    }
+
     if (!user || user.role !== 'admin') {
       navigate('/login');
       return;

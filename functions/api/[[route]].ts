@@ -215,7 +215,37 @@ app.post('/user/recipes', authMiddleware, async (c) => {
   return c.json({ success: true, id: recipeId });
 });
 
-// Image Proxy
+// Image Proxy (Fix for broken external images)
+app.get('/proxy-image', async (c) => {
+  const url = c.req.query('url');
+  if (!url) return c.notFound();
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36',
+        'Referer': new URL(url).origin
+      }
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch image');
+
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    
+    // Stream the image back to the browser with caching headers
+    return new Response(response.body, {
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=604800', // Cache for 7 days
+      }
+    });
+  } catch (err) {
+    console.error('Proxy Image Error:', err);
+    return c.notFound();
+  }
+});
+
+// Getter for R2 Images
 app.get('/images/:key{.+}', async (c) => {
   const key = c.req.param('key');
   const object = await c.env.R2.get(key);
