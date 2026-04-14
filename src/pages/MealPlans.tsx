@@ -27,6 +27,7 @@ export function MealPlans() {
   const [groceryList, setGroceryList] = useState<GroceryIngredient[]>([]);
   const [recipes, setRecipes] = useState<RecipeOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
   const [selectedDay, setSelectedRecipeDay] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,6 +100,52 @@ export function MealPlans() {
     } catch (e) { console.error(e); }
   };
 
+  const handleExportToWalmart = async () => {
+    if (groceryList.length === 0) return;
+    setExporting(true);
+    const token = localStorage.getItem('token');
+    
+    try {
+      // 1. Map ingredients to items
+      const mapRes = await fetch('/api/walmart/map-ingredients', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ ingredients: groceryList, zipCode: '50309' })
+      });
+
+      if (!mapRes.ok) throw new Error('Mapping failed');
+      const mappedData = await mapRes.json();
+
+      // 2. Create bundle and redirect
+      // For this scaffold, we'll assume mappedData returns a list of items
+      // In a real scenario, you'd let the user review the items first.
+      const bundleRes = await fetch('/api/walmart/create-bundle', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          items: mappedData.items || [], 
+          recipeIds: plannedMeals.map(m => m.recipe_id) 
+        })
+      });
+
+      if (bundleRes.ok) {
+        const { url } = await bundleRes.json();
+        window.open(url, '_blank');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Walmart Integration is currently unavailable. Check back soon!');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) return <div className="p-20 text-center font-black text-primary animate-pulse italic uppercase tracking-widest">Synchronizing Weekly Schedule...</div>;
 
   return (
@@ -113,8 +160,12 @@ export function MealPlans() {
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">Provisioning Cost</p>
             <p className="text-3xl font-black text-primary italic">~${(plannedMeals.length * 3.45).toFixed(2)}</p>
           </div>
-          <button className="bg-primary text-primary-foreground px-8 py-4 rounded-2xl font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 relative z-10 italic text-xs">
-            Export to Walmart
+          <button 
+            onClick={handleExportToWalmart}
+            disabled={exporting || groceryList.length === 0}
+            className="bg-primary text-primary-foreground px-8 py-4 rounded-2xl font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 relative z-10 italic text-xs disabled:opacity-50"
+          >
+            {exporting ? 'Exporting...' : 'Export to Walmart'}
           </button>
           <Utensils className="absolute right-[-10px] bottom-[-10px] h-24 w-24 text-primary/[0.03] rotate-12 group-hover:rotate-0 transition-transform duration-700" />
         </div>

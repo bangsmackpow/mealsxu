@@ -27,7 +27,8 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3",
     "tailwind-merge": "^2.2.2",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "worker-mailer": "^1.2.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240403.0",

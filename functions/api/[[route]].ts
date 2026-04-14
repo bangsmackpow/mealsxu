@@ -2,6 +2,8 @@ import { Context, Next, Hono } from 'hono';
 import { handle } from 'hono/cloudflare-pages';
 import { jwt, sign } from 'hono/jwt';
 import bcrypt from 'bcryptjs';
+import { WalmartService } from './walmart';
+import { EmailService } from './email';
 
 type Bindings = {
   DB: D1Database;
@@ -11,6 +13,11 @@ type Bindings = {
   WALMART_CLIENT_SECRET: string;
   WALMART_CONSUMER_ID: string;
   GOOGLE_CLIENT_ID: string;
+  SMTP_HOST: string;
+  SMTP_PORT: string;
+  SMTP_USER: string;
+  SMTP_PASS: string;
+  SMTP_FROM: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>().basePath('/api');
@@ -51,8 +58,16 @@ app.post('/auth/register', async (c) => {
       .bind(id, email, passwordHash, verificationToken)
       .run();
 
-    // TODO: Send actual verification email here
-    console.log(`Verification link: https://mealxu.pages.dev/api/auth/verify?token=${verificationToken}`);
+    // Send actual verification email via Stalwart
+    const emailService = new EmailService(
+      c.env.SMTP_HOST,
+      parseInt(c.env.SMTP_PORT),
+      c.env.SMTP_USER,
+      c.env.SMTP_PASS,
+      c.env.SMTP_FROM
+    );
+    
+    await emailService.sendVerificationEmail(email, verificationToken);
 
     return c.json({ success: true, message: 'Registration successful. Please verify your email.' });
   } catch (err: any) {
@@ -479,6 +494,47 @@ app.get('/images/:key{.+}', async (c) => {
   object.writeHttpMetadata(headers);
   headers.set('etag', object.httpEtag);
   return new Response(object.body, { headers });
+});
+
+// --- Walmart Integration ---
+
+app.post('/walmart/map-ingredients', authMiddleware, async (c) => {
+  const { ingredients, zipCode } = await c.req.json();
+  const walmart = new WalmartService(
+    c.env.WALMART_CLIENT_ID,
+    c.env.WALMART_CLIENT_SECRET,
+    c.env.WALMART_CONSUMER_ID
+  );
+
+  try {
+    const items = await walmart.mapIngredientsToItems(ingredients, zipCode);
+    return c.json(items);
+  } catch (err: any) {
+    return c.json({ error: 'Walmart mapping failed', details: err.message }, 500);
+  }
+});
+
+app.post('/walmart/create-bundle', authMiddleware, async (c) => {
+  const { items, recipeIds } = await c.req.json();
+  const walmart = new WalmartService(
+    c.env.WALMART_CLIENT_ID,
+    c.env.WALMART_CLIENT_SECRET,
+    c.env.WALMART_CONSUMER_ID
+  );
+
+  try {
+    const bundleUrl = await walmart.createBundleUrl(items);
+    
+    // Update metrics
+    if (recipeIds && Array.isArray(recipeIds)) {
+      const stmt = c.env.DB.prepare('UPDATE recipes SET cart_adds = cart_adds + 1 WHERE id = ?');
+      await c.env.DB.batch(recipeIds.map(id => stmt.bind(id)));
+    }
+
+    return c.json({ url: bundleUrl });
+  } catch (err: any) {
+    return c.json({ error: 'Walmart bundle creation failed', details: err.message }, 500);
+  }
 });
 
 export const onRequest = handle(app);

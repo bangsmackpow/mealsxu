@@ -81,13 +81,27 @@ export function Layout({ children, onAddRecipe }: LayoutProps) {
             </Link>
             
             {user ? (
-              <button 
-                onClick={handleLogout}
-                className="p-2.5 hover:bg-red-50 rounded-xl text-muted-foreground hover:text-red-600 transition-all border-2 border-transparent hover:border-red-100"
-                title="Sign Out"
-              >
-                <LogOut className="h-5 w-5 font-black" />
-              </button>
+              <div className="flex items-center gap-2">
+                <Link 
+                  to="/profile" 
+                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 hover:bg-primary/10 rounded-xl text-primary transition-all border-2 border-transparent hover:border-primary/20 group"
+                >
+                  <div className="h-7 w-7 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-black text-xs italic shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
+                    {user.email[0].toUpperCase()}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-widest leading-none">Account</span>
+                    <span className="text-[11px] font-bold text-muted-foreground truncate max-w-[100px]">{user.email}</span>
+                  </div>
+                </Link>
+                <button 
+                  onClick={handleLogout}
+                  className="p-2.5 hover:bg-red-50 rounded-xl text-muted-foreground hover:text-red-600 transition-all border-2 border-transparent hover:border-red-100"
+                  title="Sign Out"
+                >
+                  <LogOut className="h-5 w-5 font-black" />
+                </button>
+              </div>
             ) : (
               <Link to="/login" className="p-2.5 hover:bg-primary/10 rounded-xl text-muted-foreground hover:text-primary transition-all border-2 border-transparent hover:border-primary/20">
                 <User className="h-5 w-5 font-black" />
