@@ -30,6 +30,31 @@ export function RecipeDetail({ recipeId, onClose }: RecipeDetailProps) {
   const [recipe, setRecipe] = useState<RecipeFull | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const [isPlanning, setIsPlanning] = useState(false);
+  const [plannedDay, setPlannedDay] = useState<string | null>(null);
+
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  const handlePlanMeal = async (day: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+      const res = await fetch('/api/user/meal-plans', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ recipeId, dayOfWeek: day })
+      });
+      if (res.ok) {
+        setPlannedDay(day);
+        setTimeout(() => setPlannedDay(null), 3000);
+        setIsPlanning(false);
+      }
+    } catch (e) { console.error(e); }
+  };
 
   useEffect(() => {
     const fetchRecipe = async () => {
@@ -141,6 +166,43 @@ export function RecipeDetail({ recipeId, onClose }: RecipeDetailProps) {
                 ))}
               </div>
             </section>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+              <button className="flex items-center justify-center gap-3 bg-primary text-primary-foreground py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20 italic">
+                <ShoppingCart className="h-5 w-5" />
+                Add to Cart
+              </button>
+              
+              <div className="relative">
+                {!isPlanning ? (
+                  <button 
+                    onClick={() => setIsPlanning(true)}
+                    className={`w-full h-full flex items-center justify-center gap-3 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border-2 italic ${plannedDay ? 'bg-emerald-500 border-emerald-500 text-white shadow-emerald-500/20 shadow-xl' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent active:scale-95 shadow-lg'}`}
+                  >
+                    {plannedDay ? (
+                      <>Scheduled: {plannedDay} <Utensils className="h-5 w-5" /></>
+                    ) : (
+                      <><Calendar className="h-5 w-5" /> Plan Meal</>
+                    )}
+                  </button>
+                ) : (
+                  <div className="absolute inset-0 bg-card border-2 border-primary/20 rounded-2xl p-1 flex items-center gap-1 animate-in slide-in-from-right-2 duration-300 z-10 shadow-2xl">
+                    <div className="flex-1 flex gap-1 overflow-x-auto scrollbar-hide px-2">
+                      {days.map(day => (
+                        <button 
+                          key={day}
+                          onClick={() => handlePlanMeal(day)}
+                          className="px-3 py-2 bg-primary/5 hover:bg-primary text-primary hover:text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all shrink-0"
+                        >
+                          {day.substring(0, 3)}
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={() => setIsPlanning(false)} className="p-2 text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Liability-First Attribution Block */}
             <section className="pt-10 mt-10 border-t-4 border-muted/50">

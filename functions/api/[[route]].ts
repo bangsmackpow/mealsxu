@@ -224,6 +224,99 @@ app.patch('/user/profile', authMiddleware, async (c) => {
   }
 });
 
+// --- Meal Planning ---
+
+app.get('/user/meal-plans/current', authMiddleware, async (c) => {
+  const user = c.get('jwtPayload');
+  
+  // 1. Get or create current plan (for simplicity, we'll just look for the most recent one or return empty)
+  let plan = await c.env.DB.prepare('SELECT * FROM meal_plans WHERE user_id = ? ORDER BY created_at DESC LIMIT 1')
+    .bind(user.id)
+    .first();
+
+  if (!plan) {
+    const id = crypto.randomUUID();
+    const name = `Week of ${new Date().toLocaleDateString()}`;
+    await c.env.DB.prepare('INSERT INTO meal_plans (id, user_id, name) VALUES (?, ?, ?)')
+      .bind(id, user.id, name)
+      .run();
+    plan = { id, user_id: user.id, name };
+  }
+
+  // 2. Fetch all planned meals joined with recipe basic info
+  const { results } = await c.env.DB.prepare(`
+    SELECT pm.id as planned_meal_id, pm.day_of_week, r.* 
+    FROM planned_meals pm
+    JOIN recipes r ON pm.recipe_id = r.id
+    WHERE pm.plan_id = ?
+  `).bind(plan.id).all();
+
+  return c.json({ plan, meals: results });
+});
+
+app.post('/user/meal-plans', authMiddleware, async (c) => {
+  const user = c.get('jwtPayload');
+  const { recipeId, dayOfWeek } = await c.req.json();
+
+  // Get current plan
+  let plan = await c.env.DB.prepare('SELECT id FROM meal_plans WHERE user_id = ? ORDER BY created_at DESC LIMIT 1')
+    .bind(user.id)
+    .first();
+
+  if (!plan) {
+    const id = crypto.randomUUID();
+    await c.env.DB.prepare('INSERT INTO meal_plans (id, user_id, name) VALUES (?, ?, ?)')
+      .bind(id, user.id, `Week of ${new Date().toLocaleDateString()}`)
+      .run();
+    plan = { id };
+  }
+
+  const id = crypto.randomUUID();
+  await c.env.DB.prepare('INSERT INTO planned_meals (id, plan_id, recipe_id, day_of_week) VALUES (?, ?, ?, ?)')
+    .bind(id, plan.id, recipeId, dayOfWeek)
+    .run();
+
+  return c.json({ success: true, id });
+});
+
+app.delete('/user/meal-plans/meals/:id', authMiddleware, async (c) => {
+  const id = c.req.param('id');
+  await c.env.DB.prepare('DELETE FROM planned_meals WHERE id = ?').bind(id).run();
+  return c.json({ success: true });
+});
+
+app.get('/user/meal-plans/current/grocery-list', authMiddleware, async (c) => {
+  const user = c.get('jwtPayload');
+  
+  const plan = await c.env.DB.prepare('SELECT id FROM meal_plans WHERE user_id = ? ORDER BY created_at DESC LIMIT 1')
+    .bind(user.id)
+    .first();
+
+  if (!plan) return c.json({ ingredients: [] });
+
+  // Fetch all ingredients for all recipes in the plan
+  const { results } = await c.env.DB.prepare(`
+    SELECT i.name, i.quantity, i.unit
+    FROM ingredients i
+    JOIN planned_meals pm ON i.recipe_id = pm.recipe_id
+    WHERE pm.plan_id = ?
+  `).bind(plan.id).all();
+
+  // Aggregate quantities
+  const aggregated: Record<string, { quantity: number, unit: string }> = {};
+  
+  results.forEach((ing: any) => {
+    const key = `${ing.name.toLowerCase()}_${ing.unit.toLowerCase()}`;
+    if (aggregated[key]) {
+      aggregated[key].quantity += ing.quantity;
+    } else {
+      aggregated[key] = { quantity: ing.quantity, unit: ing.unit, name: ing.name };
+    }
+  });
+
+  return c.json(Object.values(aggregated));
+});
+
 // --- User Management (Admin Only) ---
 
 app.get('/admin/users', authMiddleware, adminMiddleware, async (c) => {
