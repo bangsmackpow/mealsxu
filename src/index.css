@@ -36,57 +36,60 @@
   }
 }
 
-/* Print Protocol: Foldable Hamburger Style */
+/* Print Protocol: Foldable Hamburger Style (Single Page Fix) */
 @media print {
   @page {
     size: landscape;
     margin: 0;
   }
 
+  /* Reset all elements */
   body * {
     visibility: hidden;
+    margin: 0;
+    padding: 0;
   }
 
+  /* Show only the printable container */
   #printable-recipe, #printable-recipe * {
     visibility: visible;
   }
 
   #printable-recipe {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
     display: grid !important;
-    grid-template-columns: 1fr 1.2fr;
-    gap: 4rem;
-    padding: 3rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    padding: 40px;
     background: white !important;
     color: black !important;
+    overflow: hidden;
+    page-break-after: avoid;
+  }
+
+  .print-col-left, .print-col-right {
+    height: 100%;
+    overflow: hidden;
   }
 
   .print-col-left {
-    border-right: 2px dashed #ddd;
-    padding-right: 3rem;
+    border-right: 1px dashed #ccc;
+    padding-right: 20px;
   }
 
   .no-print {
     display: none !important;
   }
 
-  /* Style refinements for print */
-  h2 { font-size: 2.5rem !important; font-weight: 900 !important; margin-bottom: 1rem !important; }
-  h3 { font-size: 1.5rem !important; font-weight: 800 !important; text-transform: uppercase !important; border-bottom: 2px solid black !important; padding-bottom: 0.5rem !important; margin-top: 2rem !important; }
-  p, li { font-size: 1rem !important; line-height: 1.5 !important; }
-  img { max-height: 250px !important; width: 100% !important; object-fit: cover !important; border-radius: 1rem !important; margin-bottom: 1rem !important; }
+  h2 { font-size: 24pt !important; line-height: 1.1; margin-bottom: 10pt; }
+  h3 { font-size: 14pt !important; border-bottom: 1pt solid black; margin-top: 15pt; margin-bottom: 5pt; text-transform: uppercase; }
+  p, li { font-size: 10pt !important; line-height: 1.3; }
+  img { width: 100% !important; height: 180px !important; object-fit: cover; border-radius: 10px; margin-bottom: 10px; }
   
-  /* Ensure the folding line is visible */
-  #printable-recipe::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 10%;
-    bottom: 10%;
-    border-left: 1px dashed #ccc;
-  }
+  ul { list-style: none; padding: 0; }
+  li { padding: 2px 0; border-bottom: 0.5pt solid #eee; }
 }
