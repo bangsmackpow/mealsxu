@@ -391,7 +391,23 @@ app.get('/admin/metrics', authMiddleware, adminMiddleware, async (c) => {
 // --- Recipe Routes ---
 
 app.get('/recipes', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM recipes WHERE is_archived = 0 ORDER BY created_at DESC').all();
+  const tag = c.req.query('tag');
+  let query = 'SELECT * FROM recipes WHERE is_archived = 0';
+  const params: any[] = [];
+
+  if (tag) {
+    query = `
+      SELECT r.* FROM recipes r
+      JOIN recipe_dietary_tags rdt ON r.id = rdt.recipe_id
+      JOIN dietary_tags dt ON rdt.tag_id = dt.id
+      WHERE r.is_archived = 0 AND dt.name = ?
+    `;
+    params.push(tag);
+  }
+
+  query += ' ORDER BY created_at DESC';
+  
+  const { results } = await c.env.DB.prepare(query).bind(...params).all();
   return c.json(results);
 });
 

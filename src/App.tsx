@@ -59,7 +59,8 @@ function Home() {
   const fetchRecipes = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/recipes')
+      const url = activeTag ? `/api/recipes?tag=${encodeURIComponent(activeTag)}` : '/api/recipes';
+      const response = await fetch(url)
       const data = await response.json()
       setRecipes(Array.isArray(data) ? data : [])
     } catch (error) {
@@ -72,7 +73,7 @@ function Home() {
 
   useEffect(() => {
     fetchRecipes()
-  }, [])
+  }, [activeTag])
 
   return (
     <div className="container mx-auto px-4 py-8">

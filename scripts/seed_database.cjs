@@ -22,7 +22,6 @@ async function fetchRecipe() {
 }
 
 function parseIngredient(qtyStr) {
-  // Simple parser for quantity and unit
   if (!qtyStr) return { quantity: 1, unit: 'unit' };
   const match = qtyStr.match(/^([\d.\/]+)\s*(.*)$/);
   if (!match) return { quantity: 1, unit: qtyStr.trim() || 'unit' };
@@ -41,6 +40,45 @@ function parseIngredient(qtyStr) {
   };
 }
 
+function getIntelligentTags(meal, ingredients) {
+  const tags = [];
+  const text = (meal.strMeal + ' ' + meal.strCategory + ' ' + meal.strInstructions + ' ' + ingredients.join(' ')).toLowerCase();
+
+  const isGlutenFree = !text.match(/flour|bread|pasta|wheat|rye|barley|couscous|semolina|farro/);
+  const isDairyFree = !text.match(/milk|cream|butter|cheese|yogurt|whey|casein/);
+  const isVegetarian = !text.match(/beef|pork|chicken|lamb|fish|seafood|shrimp|bacon|ham|turkey|steak/);
+  const isKeto = !text.match(/sugar|flour|potato|rice|corn|bean|honey|bread|pasta|syrup/);
+  const isHighProtein = !!text.match(/beef|pork|chicken|lamb|fish|seafood|shrimp|egg|tofu|nut|bean/);
+
+  if (isGlutenFree) tags.push(4); // Gluten-Free
+  if (isDairyFree) tags.push(8); // Dairy Free
+  if (isVegetarian) tags.push(9); // Vegetarian
+  if (isKeto) tags.push(1); // Keto
+  if (isHighProtein) tags.push(10); // High Protein
+
+  // Categories
+  if (meal.strCategory === 'Vegetarian' || meal.strCategory === 'Vegan') {
+    if (!tags.includes(9)) tags.push(9);
+  }
+
+  // Midwest logic (Hotdish Friendly)
+  if (text.match(/casserole|hotdish|tater tot|cream of|baked/)) {
+    tags.push(5);
+  }
+
+  // Diabetic Friendly
+  if (isKeto || !text.match(/sugar|honey|syrup|high fructose/)) {
+    tags.push(7);
+  }
+
+  // Mediterranean (Rough heuristic)
+  if (text.match(/olive oil|fish|garlic|tomato|cucumber|chickpea|lemon/)) {
+    tags.push(3);
+  }
+
+  return [...new Set(tags)].slice(0, 3);
+}
+
 async function seed() {
   const recipes = new Map();
   console.log('Fetching 50 unique recipes from TheMealDB...');
@@ -53,7 +91,7 @@ async function seed() {
     }
   }
 
-  let sql = 'BEGIN TRANSACTION;\n\n';
+  let sql = '';
 
   for (const meal of recipes.values()) {
     const recipeId = crypto.randomUUID();
@@ -61,35 +99,33 @@ async function seed() {
     const description = (meal.strArea + ' ' + meal.strCategory + ' dish').replace(/'/g, "''");
     const instructions = meal.strInstructions.replace(/'/g, "''");
     const imageUrl = meal.strMealThumb;
-    const servings = Math.floor(Math.random() * 4) + 2; // 2-6
+    const servings = Math.floor(Math.random() * 4) + 2;
     const sourceUrl = meal.strSource || meal.strYoutube || 'https://www.themealdb.com';
     const sourceName = meal.strSource ? new URL(meal.strSource).hostname : 'TheMealDB';
 
     sql += `INSERT INTO recipes (id, user_id, title, description, instructions, image_url, servings, source_url, source_name) VALUES ('${recipeId}', '${ADMIN_USER_ID}', '${title}', '${description}', '${instructions}', '${imageUrl}', ${servings}, '${sourceUrl}', '${sourceName}');\n`;
 
-    // Ingredients
+    const ingredientList = [];
     for (let i = 1; i <= 20; i++) {
       const name = meal[`strIngredient${i}`];
       const measure = meal[`strMeasure${i}`];
       if (name && name.trim()) {
+        ingredientList.push(name);
         const { quantity, unit } = parseIngredient(measure);
         const ingId = crypto.randomUUID();
         sql += `INSERT INTO ingredients (id, recipe_id, name, quantity, unit) VALUES ('${ingId}', '${recipeId}', '${name.replace(/'/g, "''")}', ${quantity}, '${unit.replace(/'/g, "''")}');\n`;
       }
     }
 
-    // Random Tags
-    const numTags = Math.floor(Math.random() * 2) + 1;
-    const selectedTags = [...TAGS].sort(() => 0.5 - Math.random()).slice(0, numTags);
-    for (const tag of selectedTags) {
-      sql += `INSERT INTO recipe_dietary_tags (recipe_id, tag_id) VALUES ('${recipeId}', ${tag.id});\n`;
+    const selectedTags = getIntelligentTags(meal, ingredientList);
+    for (const tagId of selectedTags) {
+      sql += `INSERT INTO recipe_dietary_tags (recipe_id, tag_id) VALUES ('${recipeId}', ${tagId});\n`;
     }
     sql += '\n';
   }
 
-  sql += 'COMMIT;';
-  fs.writeFileSync('seed_themealdb_full.sql', sql);
-  console.log('Successfully generated seed_themealdb_full.sql');
+  fs.writeFileSync('seed_intelligent_tags.sql', sql);
+  console.log('Successfully generated seed_intelligent_tags.sql');
 }
 
 seed().catch(console.error);
