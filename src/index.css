@@ -36,60 +36,75 @@
   }
 }
 
-/* Print Protocol: Foldable Hamburger Style (Single Page Fix) */
+/* 🖨️ PRINT PROTOCOL: Foldable Hamburger Style (Multi-page Fix) */
 @media print {
+  /* 1. Reset the entire browser canvas */
   @page {
     size: landscape;
-    margin: 0;
+    margin: 0.5in; /* Standard margins to prevent clipping */
   }
 
-  /* Reset all elements */
-  body * {
-    visibility: hidden;
-    margin: 0;
-    padding: 0;
-  }
-
-  /* Show only the printable container */
-  #printable-recipe, #printable-recipe * {
-    visibility: visible;
-  }
-
-  #printable-recipe {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    padding: 40px;
+  /* 2. Hide everything by default using the most aggressive method */
+  body {
     background: white !important;
     color: black !important;
-    overflow: hidden;
-    page-break-after: avoid;
   }
 
-  .print-col-left, .print-col-right {
-    height: 100%;
-    overflow: hidden;
-  }
-
-  .print-col-left {
-    border-right: 1px dashed #ccc;
-    padding-right: 20px;
-  }
-
-  .no-print {
+  /* Hide the root React node and all overlays */
+  #root, .fixed, .absolute, header, footer, button, nav {
     display: none !important;
   }
 
-  h2 { font-size: 24pt !important; line-height: 1.1; margin-bottom: 10pt; }
-  h3 { font-size: 14pt !important; border-bottom: 1pt solid black; margin-top: 15pt; margin-bottom: 5pt; text-transform: uppercase; }
-  p, li { font-size: 10pt !important; line-height: 1.3; }
-  img { width: 100% !important; height: 180px !important; object-fit: cover; border-radius: 10px; margin-bottom: 10px; }
+  /* 3. Explicitly show ONLY the printable recipe container */
+  #printable-recipe {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5in;
+    width: 100% !important;
+    height: auto !important;
+    visibility: visible !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  #printable-recipe * {
+    visibility: visible !important;
+    display: block; /* Ensure elements inside show up */
+  }
+
+  /* 4. Column Layout & Fold Line */
+  .print-col-left {
+    border-right: 1pt dashed #ccc;
+    padding-right: 0.25in;
+  }
+
+  .print-col-right {
+    padding-left: 0.25in;
+  }
+
+  /* 5. Typography Refinements for Ink/Paper */
+  h2 { font-size: 28pt !important; font-weight: 900 !important; margin-bottom: 8pt !important; color: #f97316 !important; }
+  h3 { font-size: 16pt !important; font-weight: 800 !important; border-bottom: 2pt solid black !important; padding-bottom: 4pt !important; margin-top: 20pt !important; }
+  p, li { font-size: 11pt !important; line-height: 1.4 !important; color: black !important; }
   
-  ul { list-style: none; padding: 0; }
-  li { padding: 2px 0; border-bottom: 0.5pt solid #eee; }
+  img { 
+    max-height: 2.5in !important; 
+    width: 100% !important; 
+    object-fit: cover !important; 
+    border-radius: 12pt !important; 
+    margin-bottom: 12pt !important;
+    display: block !important;
+  }
+
+  ul { list-style: none !important; padding: 0 !important; }
+  li { padding: 4pt 0 !important; border-bottom: 0.5pt solid #eee !important; }
+
+  /* Ensure background colors/images print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }
