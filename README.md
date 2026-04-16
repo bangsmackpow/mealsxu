@@ -66,7 +66,8 @@ Mealsxu is a high-performance, edge-first recipe platform built on **Cloudflare 
 
 - [x] **Intelligent Tagging:** Automatic filter compliance based on ingredient lists.
 - [x] **Secure User Profiles:** Self-service password management.
-- [ ] **Print Protocol:** Foldable "Hamburger Style" clean recipe printouts.
+- [x] **Print Protocol:** Foldable "Hamburger Style" clean recipe printouts.
+- [x] **Email Logistics:** Live SMTP connection via Stalwart.
 - [ ] **Mobile Export:** PWA/Capacitor integration for in-store usage.
 
 ## 📄 License

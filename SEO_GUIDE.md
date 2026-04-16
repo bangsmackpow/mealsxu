@@ -34,4 +34,4 @@ The platform now includes core technical SEO foundations:
 Every time you add a large batch of new recipes (e.g., another 50), Google will automatically crawl them via the internal linking on your homepage. No manual action is usually required after the initial setup.
 
 ---
-*Updated: April 14, 2026*
+*Updated: April 15, 2026*
